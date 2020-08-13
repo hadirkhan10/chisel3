@@ -603,8 +603,23 @@ private[chisel3] object Builder {
     throwException(m)
   }
 
+  def getScalaMajorVersion: Int = {
+    val "2" :: major :: _ :: Nil = chisel3.BuildInfo.scalaVersion.split("\\.").toList
+    major.toInt
+  }
+
+  def checkScalaVersion(): Unit = {
+    if (getScalaMajorVersion == 11) {
+      val url = _root_.firrtl.stage.transforms.CheckScalaVersion.migrationDocumentLink
+      val msg = s"Chisel support for Scala 2.11 is deprecated, please upgrade to Scala 2.12. See $url"
+      deprecated(msg, Some(""))
+    }
+  }
+
+
   def build[T <: RawModule](f: => T): (Circuit, T) = {
     dynamicContextVar.withValue(Some(new DynamicContext())) {
+      checkScalaVersion()
       errors.info("Elaborating design...")
       val mod = f
       mod.forceName(None, mod.name, globalNamespace)
